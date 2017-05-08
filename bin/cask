@@ -38,6 +38,7 @@ import re
 import subprocess
 import errno
 
+import commander
 
 # The Cask executable and directories
 CASK = os.path.realpath(os.path.abspath(sys.argv[0]))
@@ -383,16 +384,25 @@ def main():
             exit_error(
                 'Python 2.6 required, yours is {0.major}.{0.minor}'.format(
                     sys.version_info))
-        ## TODO: replace with a command line parser!
-        if len(sys.argv) > 1 and sys.argv[1] == 'exec':
-            if len(sys.argv) == 2:
-                exec_cask(['help'])
-            else:
-                exec_command(sys.argv[2:])
-        elif len(sys.argv) > 1 and sys.argv[1] == 'emacs':
-            exec_emacs(sys.argv[2:])
+        argp = commander.create_argument_parser(os.path.join(CASK_DIRECTORY,
+                                                             'cask-cli.el'),
+                                                cmdfuncs={'exec': exec_command,
+                                                          'emacs': exec_emacs})
+        args = argp.parse_args(sys.argv[1:])
+        if args.func:
+            args.func(sys.argv[2:])
         else:
             exec_cask(sys.argv[1:])
+        ## TODO: replace with a command line parser!
+        # if len(sys.argv) > 1 and sys.argv[1] == 'exec':
+        #     if len(sys.argv) == 2:
+        #         exec_cask(['help'])
+        #     else:
+        #         exec_command(sys.argv[2:])
+        # elif len(sys.argv) > 1 and sys.argv[1] == 'emacs':
+        #     exec_emacs(sys.argv[2:])
+        # else:
+        #     exec_cask(sys.argv[1:])
     except OSError as error:
         exit_error(error)
     except UnsupportedEmacsVersionError as error:
