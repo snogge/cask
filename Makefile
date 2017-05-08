@@ -18,13 +18,17 @@ FIXTURES_DIR = fixtures
 
 all: test
 
-test: unit ecukes
+test: unit ecukes nose
 
 unit:
 	$(CASK) exec ert-runner
 
 ecukes:
 	$(CASK) exec ecukes
+
+nose:
+	nosetests -v --with-doctest . bin
+	nosetests3 -v --with-doctest . bin
 
 doc: html
 
