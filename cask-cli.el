@@ -46,6 +46,9 @@
 (defconst cask-cli--table-padding 10
   "Number of spaces to pad with when printing table.")
 
+(defvar cask-cli--debug nil
+  "If cask should run in debug mode or not.")
+
 (defvar cask-cli--dev-mode nil
   "If Cask should run in dev mode or not.")
 
@@ -354,6 +357,7 @@ Commands:
 
 (defun cask-cli/debug ()
   "Turn on debug output."
+  (setq cask-cli--debug t)
   (setq debug-on-error t))
 
 (defun cask-cli/verbose ()
