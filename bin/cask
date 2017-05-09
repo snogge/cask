@@ -317,7 +317,13 @@ def exec_command(command):
     if (b'CASK_EMACS' in ENVB):
         ENVB[b'EMACS'] = ENVB[b'CASK_EMACS']
 
+    debug = '--debug' in command
     try:
+        if debug:
+            print("""Executing command: '{command}' with
+ EMACSLOADPATH={EMACSLOADPATH}
+ PATH={PATH}
+ EMACS=""".format(command=' '.join(command), **ENVB))
         os.execvp(command[0], command)
     except OSError as error:
         raise ExecCommandError(command, error)
@@ -351,6 +357,8 @@ def exec_cask(arguments):
     emacs = get_cask_emacs()
     cli = os.path.join(CASK_DIRECTORY, 'cask-cli.el')
     command = [emacs, '-Q', '--script', cli, '--'] + arguments
+    if '--debug' in arguments:
+        print('execvp ' + ' '.join(command))
     os.execvp(command[0], command)
 
 
