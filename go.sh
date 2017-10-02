@@ -41,7 +41,7 @@ fail() {
 }
 
 bootstrap_cask() {
-	cask=$1/bin/cask
+	cask=$1/bin/cask.sh
 	$cask || fail "Cask could not be bootstrapped. Try again later, or report an issue at $ISSUE_TRACKER."
 }
 
