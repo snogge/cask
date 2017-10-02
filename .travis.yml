@@ -1,9 +1,13 @@
 language: generic
 sudo: false
 before_install:
-  - curl -fsSkL https://gist.github.com/rejeep/ebcd57c3af83b049833b/raw > x.sh && source ./x.sh
-  - evm install $EVM_EMACS --use --skip
-  - cask
+  - export PATH=/home/travis/.evm/bin:/home/travis/.cask/bin:$PATH
+  - git clone https://github.com/rejeep/evm.git /home/travis/.evm
+  - evm config path /tmp
+  - evm install emacs-24.3-travis --use --skip
+  - env
+  - export REPO_BRANCH=${TRAVIS_PULL_REQUEST_BRANCH:-${TRAVIS_BRANCH}}
+  - REPOSITORY=https://github.com/${TRAVIS_PULL_REQUEST_SLUG:-${TRAVIS_REPO_SLUG}}.git ./go.sh
   - make start-server
 env:
   - EVM_EMACS=emacs-24.3-travis
