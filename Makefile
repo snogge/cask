@@ -1,4 +1,4 @@
-CASK ?= cask
+CASK ?= cask.sh
 EMACS ?= emacs
 SERVANT ?= servant
 SPHINX-BUILD = sphinx-build
