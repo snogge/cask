@@ -320,7 +320,7 @@ This function returns the path to the package file."
          (config (cask--dependency-to-package-build-config dependency))
          (files (cask--dependency-files dependency)))
     (let ((version (package-build-checkout name config path)))
-      (package-build-package name version files path cask-tmp-packages-path)
+      (package-build-package (symbol-name name) version files path cask-tmp-packages-path)
       (let ((pattern (format "%s-%s.*" name version)))
         (car (f-glob pattern cask-tmp-packages-path))))))
 
@@ -916,7 +916,7 @@ NAME-pkg.el or Cask file for the linking to be possible."
     (f-symlink? path)))
 
 (defun cask-package (bundle &optional target-dir)
-  "Build an Elpa package of BUNDLE.
+  "Build an ELPA package of BUNDLE.
 
 Put package in TARGET-DIR if specified.  If not specified, put in
 a directory specified by `cask-dist-path' in the BUNDLE path."

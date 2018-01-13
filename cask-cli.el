@@ -160,7 +160,7 @@ Git is available in `exec-path'."
   "Execute ARGS with correct `exec-path' and `load-path'.")
 
 (defun cask-cli/update ()
-  "Update package version.
+  "Update package versions.
 
 All packages that are specified in the Cask-file will be updated
 including their dependencies."
@@ -281,7 +281,7 @@ with some function that your package requires.
 With the link command, you can checkout f.el locally, add it as a
 link in your local package.  That means that when you require
 f.el, you will require the local package instead of the one
-fetched from the Elpa mirror.  Now you add the desired function
+fetched from the ELPA mirror.  Now you add the desired function
 to f.el and use your library to try it out.
 
 COMMAND-OR-NAME can be one of: delete, list or a link name.
@@ -396,7 +396,7 @@ Commands:
  (option "--proxy <host>" cask-cli/cask-proxy)
  (option "--http-proxy <host>" cask-cli/cask-http-proxy)
  (option "--https-proxy <host>" cask-cli/cask-https-proxy)
- (option "--no-proxy" cask-cli/cask-no-proxy)
+ (option "--no-proxy <host>" cask-cli/cask-no-proxy)
 
  (option "--version" cask-cli/cask-version)
  (option "-h [command], --help [command]" cask-cli/help)
