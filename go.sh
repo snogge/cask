@@ -42,7 +42,7 @@ fail() {
 
 bootstrap_cask() {
 	cask=$1/bin/cask.sh
-	$cask || fail "Cask could not be bootstrapped. Try again later, or report an issue at $ISSUE_TRACKER."
+	$cask upgrade-cask || fail "Cask could not be bootstrapped. Try again later, or report an issue at $ISSUE_TRACKER."
 }
 
 install_cask() {
@@ -59,4 +59,4 @@ install_cask() {
 install_cask $TARGET_DIRECTORY
 bootstrap_cask $TARGET_DIRECTORY
 success "Successfully installed Cask! Now, add the cask binary to your \$PATH:
-export PATH=\$TARGET_DIRECTORY/bin:\$PATH"
+  export PATH=\$TARGET_DIRECTORY/bin:\$PATH"
