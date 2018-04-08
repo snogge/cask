@@ -30,12 +30,6 @@ else
 fi
 
 case $subcommand in
-	install|pkg-file|update|build|clean-elc|eval|exec-path|files|\
-	help|info|init|link|list|load-path|outdated|package|\
-	package-directory|path|upgrade|upgrade-cask|version)
-		cli=$CASK_DIRECTORY/cask-cli.el
-		$CASK_EMACS -Q --script $cli -- $subcommand $*
-		;;
 	emacs)
 		EMACSLOADPATH=$($CASK load-path)
 		xPATH=$($CASK path)
@@ -45,6 +39,10 @@ case $subcommand in
 		EMACSLOADPATH=$($CASK load-path)
 		xPATH=$($CASK path)
 		EMACSLOADPATH=$EMACSLOADPATH PATH=$xPATH EMACS=$CASK_EMACS $*
+		;;
+	*)
+		cli=$CASK_DIRECTORY/cask-cli.el
+		$CASK_EMACS -Q --script $cli -- $subcommand $*
 		;;
 esac
 
