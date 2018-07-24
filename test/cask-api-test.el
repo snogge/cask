@@ -512,6 +512,35 @@
     (cask-caskify bundle)
     (should (f-file? (f-expand "Cask" cask-test/sandbox-path)))))
 
+(ert-deftest cask-caskify-dev ()
+  (cask-test/with-bundle nil
+    (should-not (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+    (cask-caskify bundle t)
+    (should (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+    (should (s-matches? "^\(package-file \"TODO\"\)$"
+                        (f-read-text (f-expand "Cask" cask-test/sandbox-path))))))
+
+(ert-deftest cask-caskify-dev-single-el-file ()
+  (cask-test/with-bundle nil
+    (let ((main-package-file "foo.el"))
+      (should-not (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+      (f-touch (f-expand main-package-file cask-test/sandbox-path))
+      (f-touch (f-expand "bar" cask-test/sandbox-path))
+      (cask-caskify bundle t)
+      (should (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+      (should (s-matches? (format "^\(package-file \"%s\"\)$" main-package-file)
+                          (f-read-text (f-expand "Cask" cask-test/sandbox-path)))))))
+
+(ert-deftest cask-caskify-dev-multi-el-file ()
+  (cask-test/with-bundle nil
+    (should-not (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+    (f-touch (f-expand "foo.el" cask-test/sandbox-path))
+    (f-touch (f-expand "bar.el" cask-test/sandbox-path))
+    (cask-caskify bundle t)
+    (should (f-file? (f-expand "Cask" cask-test/sandbox-path)))
+    (should (s-matches? "^\(package-file \"TODO\"\)$"
+                        (f-read-text (f-expand "Cask" cask-test/sandbox-path))))))
+
 
 ;;;; cask-update
 
@@ -818,8 +847,14 @@
 (ert-deftest cask-files-test/no-files-directive-with-files ()
   (cask-test/with-bundle 'empty
     (f-touch "package-a.el")
-    (f-touch "package-b.el")
-    (should (-same-items? (cask-files bundle) '("package-a.el" "package-b.el")))))
+    (f-touch "package-a.info")
+    (should (-same-items? (cask-files bundle) '("package-a.el" "package-a.info")))))
+
+(ert-deftest cask-files-test/no-files-directive-with-files-and-excluded-files ()
+  (cask-test/with-bundle 'empty
+    (f-touch "package-a.el")
+    (f-touch "foo")
+    (should (-same-items? (cask-files bundle) '("package-a.el")))))
 
 (ert-deftest cask-files-test/with-files-directive ()
   (cask-test/with-bundle
@@ -828,6 +863,22 @@
     (f-touch "package-b.el")
     (f-touch "package-c.el")
     (should (-same-items? (cask-files bundle) '("package-a.el" "package-b.el")))))
+
+(ert-deftest cask-files-test/with-defaults-files-directive-with-files ()
+  (cask-test/with-bundle
+      '((files :defaults))
+    (f-touch "package-a.el")
+    (f-touch "package-a.info")
+    (f-touch "foo")
+    (should (-same-items? (cask-files bundle) '("package-a.el" "package-a.info")))))
+
+(ert-deftest cask-files-test/with-defaults-and-more-files-directive-with-files ()
+  (cask-test/with-bundle
+      '((files :defaults "foo"))
+    (f-touch "package-a.el")
+    (f-touch "package-a.info")
+    (f-touch "foo")
+    (should (-same-items? (cask-files bundle) '("package-a.el" "package-a.info" "foo")))))
 
 
 ;;;; cask-add-dependency

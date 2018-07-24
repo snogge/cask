@@ -34,9 +34,19 @@ Package metadata
 
    The package name will be the name of the given :var:`file`, sans directory
    and extension.  The description is taken from the very first line of
-   :var:`file`.  The version and the runtime dependencies are taken from the
+   :var:`file`.  The version and the run-time dependencies are taken from the
    library headers of :var:`file`.  See :infonode:`(elisp)Library Headers` for
    details about library headers
+
+.. function:: package-descriptor file
+
+   Declare all package metadata directly by specifying a package descriptor
+   contained in file with name given by :var:`file`
+
+   See `Multi-file Packages`_ for examples on defining packages with the
+   :function:`define-package` function.
+
+   .. _Multi-file Packages: https://www.gnu.org/software/emacs/manual/html_node/elisp/Multi_002dfile-Packages.html
 
 Package contents
 ================
@@ -50,7 +60,9 @@ Package contents
    Each :var:`pattern` in :var:`patterns` is either a simple glob pattern as
    string or an expression :varcode:`({target} {pattern}...)`.  In the former
    case, all files matching the pattern (relative to the directory of the
-   :file:`Cask` file) are included at the *top-level* of the package.
+   :file:`Cask` file) are included at the *top-level* of the package. ``:defaults``
+   may be used as the first pattern to explicitly include the default patterns.
+   This allows subsequent patterns to append to the defaults.
 
    In the latter case, :var:`target` is the *unqualified* target directory
    within the package, each :var:`pattern` describes the contents of the package

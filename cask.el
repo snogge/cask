@@ -6,10 +6,10 @@
 
 ;; Author: Johan Andersson <johan.rejeep@gmail.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
-;; Version: 0.8.1
+;; Version: 0.8.4
 ;; Keywords: speed, convenience
 ;; URL: http://github.com/cask/cask
-;; Package-Requires: ((s "1.8.0") (dash "2.2.0") (f "0.16.0") (epl "0.5") (shut-up "0.1.0") (cl-lib "0.3") (package-build "0.1"))
+;; Package-Requires: ((s "1.8.0") (dash "2.2.0") (f "0.16.0") (epl "0.5") (shut-up "0.1.0") (cl-lib "0.3") (package-build "1.2"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -156,6 +156,16 @@ Slots:
 `column' Column number on the `line'."
   line column)
 
+;; Specializations of package-build classes and methods to define a
+;; directory based recipe.
+(defclass package-directory-recipe (package-recipe)
+  ((dir           :initarg :dir   :initform ".")))
+
+(defmethod package-recipe--working-tree ((rcp package-directory-recipe))
+  (oref rcp dir))
+
+(defmethod package-build--get-commit ((rcp package-directory-recipe)))
+
 (defvar cask-source-mapping
   '((gnu          . "https://elpa.gnu.org/packages/")
     (melpa        . "https://melpa.org/packages/")
@@ -300,14 +310,23 @@ ARGS is a plist with these additional options:
   "Return true if BUNDLE has any fetcher dependencies."
   (> (length (cask--fetcher-dependencies bundle)) 0))
 
-(defun cask--dependency-to-package-build-config (dependency)
-  "Turn DEPENDENCY into a package-build config object."
-  (let ((fetcher (intern (substring (symbol-name (cask-dependency-fetcher dependency)) 1)))
+(defun cask--dependency-to-package-build-recipe (dependency)
+  "Turn DEPENDENCY into a package-build recipe object."
+  (let ((name (symbol-name (cask-dependency-name dependency)))
         (url (cask-dependency-url dependency))
         (files (cask--dependency-files dependency))
+        (fetcher (substring (symbol-name (cask-dependency-fetcher dependency)) 1))
         (commit (cask-dependency-ref dependency))
         (branch (cask-dependency-branch dependency)))
-    (list :fetcher fetcher :url url :files files :commit commit :branch branch)))
+    (cask--create-package-build-recipe
+     fetcher name
+     :url url :files files :commit commit :branch branch)))
+
+(defun cask--create-package-build-recipe (fetcher name &rest args)
+  "Create a package-build `package-recipe' for FETCHER with NAME.
+ARGS is the initialization slots."
+  (let ((constructor (intern (format "package-%s-recipe" fetcher))))
+    (apply constructor name :name name args)))
 
 (defun cask--checkout-and-package-dependency (dependency)
   "Checkout and package DEPENDENCY.
@@ -315,14 +334,15 @@ ARGS is a plist with these additional options:
 This function returns the path to the package file."
   (--each (list cask-tmp-path cask-tmp-checkout-path cask-tmp-packages-path)
     (unless (f-dir? it) (f-mkdir it)))
-  (let* ((name (cask-dependency-name dependency))
-         (path (f-expand (symbol-name name) cask-tmp-checkout-path))
-         (config (cask--dependency-to-package-build-config dependency))
-         (files (cask--dependency-files dependency)))
-    (let ((version (package-build-checkout name config path)))
-      (package-build-package (symbol-name name) version files path cask-tmp-packages-path)
+  (let ((name (symbol-name (cask-dependency-name dependency)))
+        (rcp (cask--dependency-to-package-build-recipe dependency))
+        (package-build-working-dir cask-tmp-checkout-path)
+        (package-build-archive-dir cask-tmp-packages-path) )
+    (let ((version (package-build--checkout rcp)))
+      (package-build--package rcp version)
       (let ((pattern (format "%s-%s.*" name version)))
-        (car (f-glob pattern cask-tmp-packages-path))))))
+        (--first (s-match ".*\\.\\(tar\\|el\\)" it)
+                 (f-glob pattern cask-tmp-packages-path))))))
 
 (defmacro cask--with-environment (bundle &rest body)
   "Switch to BUNDLE environment and yield BODY.
@@ -391,6 +411,19 @@ SCOPE may be nil or 'development."
                        (f-expand filename (cask-bundle-path bundle)))
                     (epl-invalid-package
                      (cask--show-package-error err filename)))))
+             (cask--from-epl-package bundle package))))
+        (package-descriptor
+         (cl-destructuring-bind (_ &optional filename) form
+           (let* ((descriptor-filename
+                   (or filename (let ((pkg-files (f-glob "*-pkg.el" (cask-bundle-path bundle))))
+                                  (if (car pkg-files) (f-filename (car pkg-files))
+                                    (error "No -pkg.el file found for package descriptor")))))
+                  (package
+                   (condition-case err
+                      (epl-package-from-descriptor-file
+                       (f-expand descriptor-filename (cask-bundle-path bundle)))
+                    (epl-invalid-package
+                     (cask--show-package-error err descriptor-filename)))))
              (cask--from-epl-package bundle package))))
         (depends-on
          (cl-destructuring-bind (_ name &rest args) form
@@ -629,6 +662,13 @@ configuration template is used."
   (let ((cask-file (cask-file bundle))
         (init-content
          (cask--template-get (if dev-mode "init-dev.tpl" "init.tpl"))))
+    ;; If there's only a single .el file, use that as the package-file.
+    (when dev-mode
+      (let* ((files (f--files (cask-path bundle) (f-ext? it "el")))
+             (package-file (if (equal (length files) 1)
+                               (f-filename (-first-item files))
+                             "TODO")))
+        (setq init-content (format init-content package-file))))
     (if (f-file? cask-file)
         (error "Cask-file already exists")
       (f-write-text init-content 'utf-8 cask-file))))
@@ -770,8 +810,15 @@ If no such dependency exist, return nil."
 This is done by expanding the patterns in the BUNDLE path.  Files
 in the list are relative to the path."
   (cask--with-file bundle
-    (let ((path (cask-bundle-path bundle))
-          (patterns (or (cask-bundle-patterns bundle) package-build-default-files-spec)))
+    (let* ((path (cask-bundle-path bundle))
+           (file-list (cask-bundle-patterns bundle))
+           ;; stolen from `package-build--config-file-list'
+           (patterns (cond ((null file-list)
+                            package-build-default-files-spec)
+                           ((eq :defaults (car file-list))
+                            (append package-build-default-files-spec (cdr file-list)))
+                           (t
+                            file-list))))
       (-map 'car (ignore-errors (package-build-expand-file-specs path patterns))))))
 
 (defun cask-add-dependency (bundle name &rest args)
@@ -931,7 +978,13 @@ a directory specified by `cask-dist-path' in the BUNDLE path."
         (setq target-dir (f-expand cask-dist-path path)))
       (unless (f-dir? target-dir)
         (f-mkdir target-dir))
-      (package-build-package name version patterns path target-dir))))
+      (let ((rcp (package-directory-recipe name
+                  :name name
+                  :files patterns
+                  :dir path))
+            (package-build-working-dir path)
+            (package-build-archive-dir target-dir))
+        (package-build--package rcp version)))))
 
 (provide 'cask)
 
