@@ -200,6 +200,18 @@
                           (make-cask-dependency :name 'package-b :version "0.0.1"))))
       (should-be-same-dependencies actual expected))))
 
+(ert-deftest cask-dependencies-test/with-duplicated-dependenies ()
+  (cask-test/with-bundle
+      '((source localhost)
+        (depends-on "package-c" "0.0.1")
+        (depends-on "package-d" "0.0.1")
+        (development
+         (depends-on "package-d" "0.0.2")))
+    (let ((actual (cask-dependencies bundle))
+          (expected (list (make-cask-dependency :name 'package-c :version "0.0.1")
+                          (make-cask-dependency :name 'package-d :version "0.0.1"))))
+      (should-be-same-dependencies actual expected))))
+
 (ert-deftest cask-dependencies-test/deep ()
   (cask-test/with-bundle
       '((source localhost)
@@ -442,6 +454,16 @@
     (let ((path (f-join (cask-elpa-path bundle) "package-e-0.0.1" "bin")))
       (should (equal (cons path exec-path) (cask-exec-path bundle))))))
 
+(ert-deftest cask-exec-path-test/local-executable-files ()
+  (cask-test/with-bundle
+      '((source localhost)
+        (files "bin/executable"))
+    (f-mkdir "bin")
+    (f-touch "bin/executable")
+    (chmod "bin/executable" 755)
+    (let ((path (f-join (cask-path bundle) "bin/")))
+      (should (equal (cons path exec-path) (cask-exec-path bundle))))))
+
 
 ;;;; cask-load-path
 
@@ -474,6 +496,17 @@
                       path-package-f)
                 load-path)
         (cask-load-path bundle))))))
+
+(ert-deftest cask-load-path-test/hierarchical ()
+  (cask-test/with-bundle
+      '((files "package-a.el" "foo/package-b.el"))
+    (f-touch "package-a.el")
+    (f-mkdir "foo")
+    (f-touch "foo/package-b.el")
+    (should
+     (-same-items?
+      (append (-map 'f-expand (list "./" "foo/")) load-path)
+      (cask-load-path bundle)))))
 
 (ert-deftest cask-load-path-test/without-initialized-environment ()
   (cask-test/with-bundle
@@ -958,7 +991,7 @@
       '((files "foo.el"))
     (f-touch "foo.el")
     (f-touch "bar.el")
-    (cask-build bundle)
+    (shut-up (cask-build bundle))
     (should (f-file? "foo.el"))
     (should (f-file? "foo.el"))
     (should (f-file? "bar.el"))
@@ -968,7 +1001,7 @@
   (cask-test/with-bundle 'empty
     (f-touch "foo.el")
     (f-touch "bar.el")
-    (cask-build bundle)
+    (shut-up (cask-build bundle))
     (should (f-file? "foo.el"))
     (should (f-file? "foo.el"))
     (should (f-file? "bar.el"))
@@ -980,7 +1013,7 @@
                            (depends-on "package-a" "0.0.1"))
     (f-write-text "(require 'package-a)" 'utf-8 "foo.el")
     (cask-install bundle)
-    (cask-build bundle)))
+    (shut-up (cask-build bundle))))
 
 
 ;;;; cask-clean-elc
