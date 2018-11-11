@@ -33,16 +33,16 @@ case $subcommand in
 	emacs)
 		EMACSLOADPATH=$($CASK load-path)
 		xPATH=$($CASK path)
-		EMACSLOADPATH=$EMACSLOADPATH PATH=$xPATH EMACS=$CASK_EMACS $CASK_EMACS $*
+		EMACSLOADPATH=$EMACSLOADPATH PATH=$xPATH EMACS=$CASK_EMACS $CASK_EMACS "$@"
 		;;   
 	exec)
 		EMACSLOADPATH=$($CASK load-path)
 		xPATH=$($CASK path)
-		EMACSLOADPATH=$EMACSLOADPATH PATH=$xPATH EMACS=$CASK_EMACS $*
+		EMACSLOADPATH=$EMACSLOADPATH PATH=$xPATH EMACS=$CASK_EMACS "$@"
 		;;
 	*)
 		cli=$CASK_DIRECTORY/cask-cli.el
-		$CASK_EMACS -Q --script $cli -- $subcommand $*
+		$CASK_EMACS -Q --script $cli -- $subcommand "$@"
 		;;
 esac
 
