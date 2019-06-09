@@ -569,8 +569,9 @@ is signaled."
             (progn
               (cask-print "downloading\e[F\n")
               (shut-up (epl-package-install package)))
-		  (cask-print "missing dep\e[F\n")
-          (unless (epl-built-in-p name)
+          (if (epl-built-in-p name)
+			  (cask-print (bold (black "built-in")) "\n")
+			(cask-print (bold (red "not available")) "\n")
             (signal 'cask-missing-dependency (list dependency)))))
       (cask-print
        (format "\e[K  - Installing [%2d/%d]" (1+ index) (length (cask--dependencies bundle)))
