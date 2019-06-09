@@ -677,7 +677,8 @@ If a dependency failed to install, signal a
 . ERR)', where DEPENDENCY is the `cask-dependency' which failed
 to install, and ERR is the original error data."
   (setq package-unsigned-archives '("olanilsson")
-		package-check-signature nil)
+		package-check-signature nil
+		debug-on-error t)
   (let (missing-dependencies)
     (cask-print (green "Loading package information... "))
     (cask--with-environment bundle
