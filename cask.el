@@ -559,13 +559,17 @@ is signaled."
       (cask-print (bold (black "already present")) "\n"))
     (unless (or (epl-package-installed-p name) (cask-linked-p bundle name))
       (if (cask-dependency-fetcher dependency)
+		  (progn
+			(cask-print "different fetch\e[F\n")
           (shut-up
             (let ((package-path (cask--checkout-and-package-dependency dependency)))
               (epl-install-file package-path)))
+		  )
         (-if-let (package (cask--find-available-package name))
             (progn
               (cask-print "downloading\e[F\n")
               (shut-up (epl-package-install package)))
+		  (cask-print "missing dep\e[F\n")
           (unless (epl-built-in-p name)
             (signal 'cask-missing-dependency (list dependency)))))
       (cask-print
