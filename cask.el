@@ -303,6 +303,7 @@ ARGS is a plist with these additional options:
     (setq package-user-dir (cask-elpa-path bundle))
     (-each (cask-bundle-sources bundle)
       (lambda (source)
+		(cask-print (cask-source-name source) "\n")
         (epl-add-archive (cask-source-name source)
                          (cask-source-url source))))
     (shut-up
@@ -570,7 +571,7 @@ is signaled."
               (cask-print "downloading\e[F\n")
               (shut-up (epl-package-install package)))
           (if (epl-built-in-p name)
-			  (cask-print (bold (black "built-in")) "\n")
+			  (cask-print (bold (black "built-in")) "\n")  ; should never happen
 			(cask-print (bold (red "not available")) "\n")
             (signal 'cask-missing-dependency (list dependency)))))
       (cask-print
@@ -909,6 +910,7 @@ symbol, which refers to some of the keys in
 
 Second argument URL is only required unless alias.  If no alias,
 URL is the url to the mirror."
+  (cask-print "Adding source " name-or-alias "\n")
   (unless url
     (let ((mapping (assq name-or-alias cask-source-mapping)))
       (unless mapping
