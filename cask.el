@@ -306,7 +306,7 @@ ARGS is a plist with these additional options:
 		(cask-print (cask-source-name source) "\n")
         (epl-add-archive (cask-source-name source)
                          (cask-source-url source))))
-    (shut-up
+    (progn ;shut-up
       (condition-case err
           (progn
             (when (plist-get args :refresh)
