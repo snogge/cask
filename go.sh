@@ -49,7 +49,7 @@ install_cask() {
 	target_directory=$1
 	[ -d $target_directory ] &&
 		fail "Directory $target_directory exists. Is Cask already installed?"
-	command -v git >/dev/null ||
+	command -p -v git >/dev/null ||
 		fail "git executable not found. Please install Git."
 	git clone ${REPO_BRANCH:+-b $REPO_BRANCH} $branch $REPOSITORY $target_directory ||
 		fail "Cask could not be installed. Try again later or report an issue at $ISSUE_TRACKER."
