@@ -51,6 +51,15 @@
                                         ; not allowing it to print any
                                         ; messages.
 
+(defvar gnutls-algorithm-priority)
+(when (or (and (= emacs-major-version 25)
+			   (> emacs-minor-version 1))
+		  (and (= emacs-major-version 26)
+			   (< emacs-minor-version 3)))
+  (message "Disable TLS 1.3 on Emacs 25.2 - 26.2\n  See https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34341 ")
+  (require 'gnutls)
+  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3"))
+
 (eval-and-compile
   (defun cask-resource-path (name)
     "Get the path of a Cask resource with NAME."
